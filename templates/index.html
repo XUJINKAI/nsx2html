@@ -13,6 +13,9 @@
 <body>
 
 <style>
+.notebooks a {
+	cursor: pointer;
+}
 h2 {
 	margin-top: 32px;
 	margin-bottom: 8px;
@@ -22,11 +25,32 @@ h2 {
 	margin-bottom: 10px;
 	font-size: smaller;
 }
+.active {
+	color: #000000;
+    font-weight: bolder;
+}
 </style>
 <div id='app'>
+	<div class="notebooks">
+		<span>Notebook: </span>
+		<a @click='current_notebook=""' :class="{active: current_notebook == ''}">ALL({{ notes_count }})</a>
+		<span>, </span>
+		<span v-for='(notebook, key) in notebooks' v-if='notebook.title'>
+			<a @click='current_notebook = key;' :class="{active: current_notebook == key}">
+				{{ notebook.title }}({{ notebook.count }})
+			</a>
+			<span v-if='! notebook.is_last'>, </span>
+		</span>
+	</div>
 	<div v-for='note in notes'>
 		<h2>{{ note.title }}</h2>
-		<p class="note-info">Modify: {{ note.mtime | ts2read }} &nbsp&nbsp&nbsp&nbsp Create: {{ note.ctime | ts2read}} &nbsp&nbsp&nbsp&nbsp Notebook: {{ note.parent_id | to_notebook_title }} &nbsp&nbsp&nbsp&nbsp Tags: {{ note.tag | str_join }} &nbsp&nbsp&nbsp&nbsp Position: ({{note.latitude}}, {{note.longitude}})</p>
+		<p class="note-info">
+			<span>Modify: {{ note.mtime | ts2read }}</span>&nbsp&nbsp&nbsp&nbsp
+			<span>Create: {{ note.ctime | ts2read}}</span>&nbsp&nbsp&nbsp&nbsp
+			<span v-if='to_notebook_title(note.parent_id)'>Notebook: {{ note.parent_id | to_notebook_title }}&nbsp&nbsp&nbsp&nbsp</span>
+			<span v-if='note.tag'>Tags: {{ note.tag | str_join }}&nbsp&nbsp&nbsp&nbsp </span>
+			<span v-if='note.latitude || note.longitude'>Position: ({{note.latitude}}, {{note.longitude}})&nbsp&nbsp&nbsp&nbsp </span>
+		</p>
 		<div v-html='note.content'></div>
 	</div>
 </div>
@@ -34,9 +58,30 @@ h2 {
 var app = new Vue({
 	el: '#app',
 	data: {
+		current_notebook: '',
 	},
 	computed: {
-		notes: function(){
+		notebooks: function(){
+			var ids = CONFIG.notebook;
+			var notebooks_kv = _.pickBy(CONTENTS, function(value, key){
+				return _.includes(ids, key);
+			})
+			// is_last
+			var last = null;
+			_.forIn(notebooks_kv, function(val, key){
+				last = val;
+				val.is_last = false;
+			})
+			last.is_last = true;
+			// count
+			_.forIn(notebooks_kv, function(val, key){
+				val.count = _.size(_.pickBy(CONTENTS, function(v, k){
+					return v.parent_id == key;
+				}));
+			})
+			return notebooks_kv;
+		},
+		all_notes: function(){
 			var note_ids = CONFIG.note;
 			var notes_kv = _.pickBy(CONTENTS, function(value, key){
 				return _.includes(note_ids, key);
@@ -51,7 +96,12 @@ var app = new Vue({
 						var src = 'attachment/' + attach['name'];
 						if('ref' in attach) {
 							var ref = attach['ref'];
-							$('[ref="'+ref+'"]', html).attr('src', src);
+							var node = $('[ref="'+ref+'"]', html)[0];
+							$(node).attr('src', src);
+							var pnode = document.createElement('a');
+							$(pnode).attr('href', src);
+							pnode.innerHTML = node.outerHTML;
+							node.outerHTML = pnode.outerHTML;
 						} else {
 							var node = document.createElement('a');
 							node.innerHTML = attach['name'];
@@ -64,8 +114,29 @@ var app = new Vue({
 					note.content = html.innerHTML;
 				}
 			})
-			return _.orderBy(_.values(notes_kv), ['mtime', 'ctime'], ['desc', 'desc']);
+			var notes_values = _.values(notes_kv);
+			return _.orderBy(notes_values, ['mtime', 'ctime'], ['desc', 'desc']);
 		},
+		notes_count: function(){
+			return _.size(this.all_notes);
+		},
+		notes: function(){
+			var notes_kv = this.all_notes;
+			// filter by notebook
+			if( this.current_notebook != '') {
+				var current_notebook = this.current_notebook;
+				notes_kv = _.pickBy(notes_kv, function(value, key){
+					return value.parent_id == current_notebook;
+				});
+			}
+			var notes_values = _.values(notes_kv);
+			return _.orderBy(notes_values, ['mtime', 'ctime'], ['desc', 'desc']);
+		},
+	},
+	methods: {
+		to_notebook_title: function(id){
+			return CONTENTS[id].title;
+		}
 	},
 	filters: {
 		ts2read: function(ts){
