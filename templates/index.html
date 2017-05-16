@@ -35,7 +35,7 @@ h2 {
 		<span>Notebook: </span>
 		<a @click='current_notebook=""' :class="{active: current_notebook == ''}">ALL({{ notes_count }})</a>
 		<span>, </span>
-		<span v-for='(notebook, key) in notebooks' v-if='notebook.title'>
+		<span v-for='(notebook, key) in notebooks'>
 			<a @click='current_notebook = key;' :class="{active: current_notebook == key}">
 				{{ notebook.title }}({{ notebook.count }})
 			</a>
@@ -66,19 +66,25 @@ var app = new Vue({
 			var notebooks_kv = _.pickBy(CONTENTS, function(value, key){
 				return _.includes(ids, key);
 			})
+			// default notebook
+			_.forIn(notebooks_kv, function(val, key){
+				if(val.title == '') {
+					val.title = 'Default';
+				}
+			});
 			// is_last
 			var last = null;
 			_.forIn(notebooks_kv, function(val, key){
 				last = val;
 				val.is_last = false;
-			})
+			});
 			last.is_last = true;
 			// count
 			_.forIn(notebooks_kv, function(val, key){
 				val.count = _.size(_.pickBy(CONTENTS, function(v, k){
 					return v.parent_id == key;
 				}));
-			})
+			});
 			return notebooks_kv;
 		},
 		all_notes: function(){
