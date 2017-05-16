@@ -1,32 +1,50 @@
+#!/usr/bin/python3
+# -*- coding:utf8 -*-
+
 import os
 import sys
 import shutil
 import zipfile
 import json
+from glob import iglob
 
-TEST_NSX = '20170516_005336_10741_xjk.nsx'
+TEST_NSX = ''
 
 
+# helper
 def join_path(path1, path2):
 	return os.path.join(path1, path2)
-
 
 def abs_path(relevant_path):
 	return os.path.join(os.path.dirname(os.path.abspath(__file__)), relevant_path)
 
+def new_folder(folder):
+	if not os.path.exists(folder):
+		os.mkdir(folder)
 
 def delete_folder(folder):
 	shutil.rmtree(folder, ignore_errors=True)
 
+def copy_files(src_glob, dst_folder):
+	for fname in iglob(src_glob):
+		shutil.copy(fname, dst_folder)
+
+
+def get_content(file):
+	with open(file, 'r') as f:
+		c = f.read()
+	return c
 
 def get_nsx_file_name():
-	assert sys.argv == 2
+	assert len(sys.argv) == 2
 	return sys.argv[1]
 
 
+# process
+
 def unzip_nsx(nsx_file, unzip_folder):
 	delete_folder(unzip_folder)
-	os.mkdir(unzip_folder)
+	new_folder(unzip_folder)
 	zip_ref = zipfile.ZipFile(nsx_file, 'r')
 	zip_ref.extractall(unzip_folder)
 	zip_ref.close()
@@ -34,10 +52,41 @@ def unzip_nsx(nsx_file, unzip_folder):
 
 def load_folder_content(folder):
 	with open(join_path(folder, 'config.json')) as data_file:
-		enter_list = json.load(data_file)
-	print(enter_list)
-	result = {'note': []}
-	return result
+		enter = json.load(data_file)
+	# get ids
+	ids_list = []
+	for key in ['note', 'notebook']:
+		ids_list += enter[key]
+	for key in ['id', 'stack', 'tag']:
+		ids_list += enter['shortcut'][key]
+	ids = list(set(ids_list))
+	# get content
+	contents = {}
+	for cid in ids:
+		file = join_path(folder, cid)
+		if os.path.isfile(file):
+			with open(file, encoding='utf8') as data_file:
+				contents[cid] = json.load(data_file)
+	return contents
+
+
+def render_html(tmp_folder, content, result_folder):
+	delete_folder(result_folder)
+	new_folder(result_folder)
+	# copy templates
+	templates_join = lambda file: join_path(abs_path('templates'), file)
+	copy_files(templates_join('*.html'), result_folder)
+	copy_files(templates_join('*.js'), result_folder)
+	# copy attachment
+	copy_files(join_path(tmp_folder, 'file_*'), result_folder)
+	# config.json
+	config_file = join_path(result_folder, 'config.json')
+	with open(config_file, 'w+') as outputfile:
+		outputfile.write('CONFIG = ' + get_content(join_path(tmp_folder, 'config.json')))
+	# contents.json
+	output = join_path(result_folder, 'contents.json')
+	with open(output, 'w+', encoding='utf8') as outfile:
+		outfile.write('CONTENTS = ' + json.dumps(content, ensure_ascii=False))
 
 
 if __name__ == '__main__':
@@ -48,4 +97,5 @@ if __name__ == '__main__':
 
 	unzip_nsx(nsx_file, tmp_folder)
 	content = load_folder_content(tmp_folder)
-	# render_html(content, result_folder)
+	render_html(tmp_folder, content, result_folder)
+	print('Done. Open result folder and browse index.html')

@@ -1,13 +1,9 @@
-### **//unfinished!**
-
-convert synology note station .nsx to html
-
----
-
-# how to use
+## convert synology note station .nsx to html
 
 ```
 python nsx2html.py <xxx.nsx>
 ```
 
-go check "result" folder
+browse by open 'result/index.html' in browser
+
+TODO: attachment

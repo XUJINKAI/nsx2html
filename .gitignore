@@ -1,4 +1,8 @@
 tmp
 result
+templates/*.json
+templates/file_*
+
 *.nsx
 *.sh
+*.bat

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Note Station</title>
+	<script src='jquery-3.2.1.min.js'></script>
+	<script src='vue.js'></script>
+	<script src='lodash.js'></script>
+	<script src='moment.js'></script>
+	<script src='config.json'></script>
+	<script src='contents.json'></script>
+</head>
+<body>
+
+<style>
+h2 {
+	margin-top: 32px;
+	margin-bottom: 8px;
+}
+.note-info {
+	margin-top: 0;
+	margin-bottom: 10px;
+	font-size: smaller;
+}
+</style>
+<div id='app'>
+	<div v-for='note in notes'>
+		<h2>{{ note.title }}</h2>
+		<p class="note-info">Modify: {{ note.mtime | ts2read }} &nbsp&nbsp&nbsp&nbsp Create: {{ note.ctime | ts2read}} &nbsp&nbsp&nbsp&nbsp Notebook: {{ note.parent_id | to_notebook_title }} &nbsp&nbsp&nbsp&nbsp Position: ({{note.latitude}}, {{note.longitude}})</p>
+		<div v-html='note.content'></div>
+	</div>
+</div>
+<script>
+var app = new Vue({
+	el: '#app',
+	data: {
+	},
+	computed: {
+		notes: function(){
+			var note_ids = CONFIG.note;
+			var notes_kv = _.pickBy(CONTENTS, function(value, key){
+				return _.includes(note_ids, key);
+			})
+			return _.orderBy(_.values(notes_kv), ['mtime', 'ctime'], ['desc', 'desc']);
+		},
+	},
+	filters: {
+		ts2read: function(ts){
+			return moment.unix(ts).format('YYYY-MM-DD HH:mm:ss');
+		},
+		to_notebook_title: function(id){
+			return CONTENTS[id].title;
+		}
+	},
+})
+</script>
+
+</body>
+</html>
