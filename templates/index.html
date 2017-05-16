@@ -26,7 +26,7 @@ h2 {
 <div id='app'>
 	<div v-for='note in notes'>
 		<h2>{{ note.title }}</h2>
-		<p class="note-info">Modify: {{ note.mtime | ts2read }} &nbsp&nbsp&nbsp&nbsp Create: {{ note.ctime | ts2read}} &nbsp&nbsp&nbsp&nbsp Notebook: {{ note.parent_id | to_notebook_title }} &nbsp&nbsp&nbsp&nbsp Position: ({{note.latitude}}, {{note.longitude}})</p>
+		<p class="note-info">Modify: {{ note.mtime | ts2read }} &nbsp&nbsp&nbsp&nbsp Create: {{ note.ctime | ts2read}} &nbsp&nbsp&nbsp&nbsp Notebook: {{ note.parent_id | to_notebook_title }} &nbsp&nbsp&nbsp&nbsp Tags: {{ note.tag | str_join }} &nbsp&nbsp&nbsp&nbsp Position: ({{note.latitude}}, {{note.longitude}})</p>
 		<div v-html='note.content'></div>
 	</div>
 </div>
@@ -41,6 +41,29 @@ var app = new Vue({
 			var notes_kv = _.pickBy(CONTENTS, function(value, key){
 				return _.includes(note_ids, key);
 			})
+			// replace attachment src
+			_.forIn(notes_kv, function(note, note_key){
+				if('attachment' in note) {
+					var attachment = note['attachment'];
+					var html = document.createElement('div');
+					html.innerHTML = note.content;
+					_.forIn(attachment, function(attach, att_key){
+						var src = 'attachment/' + attach['name'];
+						if('ref' in attach) {
+							var ref = attach['ref'];
+							$('[ref="'+ref+'"]', html).attr('src', src);
+						} else {
+							var node = document.createElement('a');
+							node.innerHTML = attach['name'];
+							$(node).attr('href', src);
+							var pnode = document.createElement('p');
+							pnode.appendChild(node);
+							html.appendChild(pnode);
+						}
+					})
+					note.content = html.innerHTML;
+				}
+			})
 			return _.orderBy(_.values(notes_kv), ['mtime', 'ctime'], ['desc', 'desc']);
 		},
 	},
@@ -50,7 +73,11 @@ var app = new Vue({
 		},
 		to_notebook_title: function(id){
 			return CONTENTS[id].title;
-		}
+		},
+		str_join: function(lst){
+			if(!lst) return '';
+			return lst.join(', ');
+		},
 	},
 })
 </script>

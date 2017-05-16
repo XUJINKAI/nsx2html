@@ -7,6 +7,7 @@ import shutil
 import zipfile
 import json
 from glob import iglob
+import lxml.html as html
 
 TEST_NSX = ''
 
@@ -70,15 +71,28 @@ def load_folder_content(folder):
 	return contents
 
 
-def render_html(tmp_folder, content, result_folder):
+def process_content_attachment(tmp_folder, content, attachment_folder):
+	for nkey, note in content.items():
+		if 'attachment' in note:
+			attachments = note['attachment']
+			for akey, attach in attachments.items():
+				att_src = join_path(tmp_folder, 'file_' + attach['md5'])
+				att_dst = join_path(attachment_folder, attach['name'])
+				shutil.move(att_src, att_dst)
+	return
+
+
+def render_result(tmp_folder, content, result_folder):
+	attachment_folder = join_path(result_folder, 'attachment')
 	delete_folder(result_folder)
 	new_folder(result_folder)
+	new_folder(attachment_folder)
 	# copy templates
 	templates_join = lambda file: join_path(abs_path('templates'), file)
 	copy_files(templates_join('*.html'), result_folder)
 	copy_files(templates_join('*.js'), result_folder)
 	# copy attachment
-	copy_files(join_path(tmp_folder, 'file_*'), result_folder)
+	process_content_attachment(tmp_folder, content, attachment_folder)
 	# config.json
 	config_file = join_path(result_folder, 'config.json')
 	with open(config_file, 'w+') as outputfile:
@@ -91,11 +105,11 @@ def render_html(tmp_folder, content, result_folder):
 
 if __name__ == '__main__':
 	nsx_file = TEST_NSX if TEST_NSX else get_nsx_file_name()
-	nsx_file = abs_path(nsx_file)
 	tmp_folder = abs_path('tmp')
 	result_folder = abs_path('result')
 
 	unzip_nsx(nsx_file, tmp_folder)
 	content = load_folder_content(tmp_folder)
-	render_html(tmp_folder, content, result_folder)
+	render_result(tmp_folder, content, result_folder)
+	delete_folder(tmp_folder)
 	print('Done. Open result folder and browse index.html')
