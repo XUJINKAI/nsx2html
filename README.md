@@ -4,4 +4,4 @@
 python nsx2html.py <xxx.nsx>
 ```
 
-browse by open 'result/index.html' in browser
+open 'result/index.html' in browser

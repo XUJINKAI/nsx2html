@@ -77,12 +77,13 @@ def process_content_attachment(tmp_folder, content, attachment_folder):
 			attachments = note['attachment']
 			for akey, attach in attachments.items():
 				att_src = join_path(tmp_folder, 'file_' + attach['md5'])
-				att_dst = join_path(attachment_folder, attach['name'])
+				att_dst = join_path(attachment_folder, attach['md5'] + '_' + attach['name'])
 				shutil.move(att_src, att_dst)
 	return
 
 
-def render_result(tmp_folder, content, result_folder):
+def render_result(tmp_folder, result_folder):
+	content = load_folder_content(tmp_folder)
 	attachment_folder = join_path(result_folder, 'attachment')
 	delete_folder(result_folder)
 	new_folder(result_folder)
@@ -109,7 +110,6 @@ if __name__ == '__main__':
 	result_folder = abs_path('result')
 
 	unzip_nsx(nsx_file, tmp_folder)
-	content = load_folder_content(tmp_folder)
-	render_result(tmp_folder, content, result_folder)
+	render_result(tmp_folder, result_folder)
 	delete_folder(tmp_folder)
 	print('Done. Open result folder and browse index.html')

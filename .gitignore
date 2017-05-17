@@ -1,7 +1,7 @@
 tmp
 result
 templates/*.json
-templates/file_*
+templates/attachment
 
 *.nsx
 *.sh

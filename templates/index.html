@@ -92,15 +92,16 @@ var app = new Vue({
 			var notes_kv = _.pickBy(CONTENTS, function(value, key){
 				return _.includes(note_ids, key);
 			})
-			// replace attachment src
+			// attachment
 			_.forIn(notes_kv, function(note, note_key){
 				if('attachment' in note) {
 					var attachment = note['attachment'];
 					var html = document.createElement('div');
 					html.innerHTML = note.content;
 					_.forIn(attachment, function(attach, att_key){
-						var src = 'attachment/' + attach['name'];
+						var src = 'attachment/' + attach['md5'] + '_' + attach['name'];
 						if('ref' in attach) {
+							// replace attachment src
 							var ref = attach['ref'];
 							var node = $('[ref="'+ref+'"]', html)[0];
 							$(node).attr('src', src);
@@ -109,11 +110,20 @@ var app = new Vue({
 							pnode.innerHTML = node.outerHTML;
 							node.outerHTML = pnode.outerHTML;
 						} else {
-							var node = document.createElement('a');
-							node.innerHTML = attach['name'];
-							$(node).attr('href', src);
+							// add attachment link
+							// href link
+							var href = document.createElement('a');
+							href.innerHTML = attach['name'];
+							$(href).attr('href', src);
+							// show video
+							var show_attach = '';
+							if(src.endsWith('.mp4')) {
+								var video = '<video controls width="400"><source src="' + src + '"></video>';
+								show_attach = '<br>' + video;
+							}
+							// parent
 							var pnode = document.createElement('p');
-							pnode.appendChild(node);
+							pnode.innerHTML = href.outerHTML + show_attach;
 							html.appendChild(pnode);
 						}
 					})
