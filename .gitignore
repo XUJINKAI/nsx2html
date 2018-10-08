@@ -4,5 +4,3 @@ templates/*.json
 templates/attachment
 
 *.nsx
-*.sh
-*.bat

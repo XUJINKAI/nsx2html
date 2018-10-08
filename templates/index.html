@@ -45,8 +45,8 @@ h2 {
 	<div v-for='note in notes'>
 		<h2>{{ note.title }}</h2>
 		<p class="note-info">
-			<span>Modify: {{ note.mtime | ts2read }}</span>&nbsp&nbsp&nbsp&nbsp
 			<span>Create: {{ note.ctime | ts2read}}</span>&nbsp&nbsp&nbsp&nbsp
+			<span>Modify: {{ note.mtime | ts2read }}</span>&nbsp&nbsp&nbsp&nbsp
 			<span v-if='to_notebook_title(note.parent_id)'>Notebook: {{ note.parent_id | to_notebook_title }}&nbsp&nbsp&nbsp&nbsp</span>
 			<span v-if='note.tag'>Tags: {{ note.tag | str_join }}&nbsp&nbsp&nbsp&nbsp </span>
 			<span v-if='note.latitude || note.longitude'>Position: ({{note.latitude}}, {{note.longitude}})&nbsp&nbsp&nbsp&nbsp </span>
@@ -146,7 +146,7 @@ var app = new Vue({
 				});
 			}
 			var notes_values = _.values(notes_kv);
-			return _.orderBy(notes_values, ['mtime', 'ctime'], ['desc', 'desc']);
+			return _.orderBy(notes_values, ['ctime', 'mtime'], ['desc', 'desc']);
 		},
 	},
 	methods: {
