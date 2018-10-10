@@ -59,7 +59,8 @@ def load_folder_content(folder):
 	for key in ['note', 'notebook']:
 		ids_list += enter[key]
 	for key in ['id', 'stack', 'tag']:
-		ids_list += enter['shortcut'][key]
+		if enter['shortcut']:
+			ids_list += enter['shortcut'][key]
 	ids = list(set(ids_list))
 	# get content
 	contents = {}
@@ -75,10 +76,11 @@ def process_content_attachment(tmp_folder, content, attachment_folder):
 	for nkey, note in content.items():
 		if 'attachment' in note:
 			attachments = note['attachment']
-			for akey, attach in attachments.items():
-				att_src = join_path(tmp_folder, 'file_' + attach['md5'])
-				att_dst = join_path(attachment_folder, attach['md5'] + '_' + attach['name'])
-				shutil.move(att_src, att_dst)
+			if attachments:
+				for akey, attach in attachments.items():
+					att_src = join_path(tmp_folder, 'file_' + attach['md5'])
+					att_dst = join_path(attachment_folder, attach['md5'] + '_' + attach['name'])
+					shutil.move(att_src, att_dst)
 	return
 
 
